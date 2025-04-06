@@ -13,6 +13,12 @@ router.get('/', function(req, res, next) {
       res.status(200).json(rows);
     });
 
+  } else if(req.query.name) {
+    const stmt = db.prepare("SELECT * FROM Users WHERE Username=?");
+    stmt.all([req.query.name], (err, rows) => {
+      res.status(200).json(rows);
+    });
+
   } else {
     const stmt = db.prepare("SELECT * FROM Users");
     stmt.all((err, rows) => {
@@ -34,7 +40,7 @@ router.post('/new', function(req, res, next) {
 });
 
 /* Change a user's name */
-router.put('/new', function(req, res, next) {
+router.put('/edit', function(req, res, next) {
   if(req.body.Username != null && req.body.id != null) {
 
     const stmt = db.prepare("SELECT * FROM Users WHERE ID=?");
@@ -53,5 +59,28 @@ router.put('/new', function(req, res, next) {
   }
 });
 
+
+// Delete a User
+router.delete('/', function(req, res, next) {
+
+  let id = req.query.id;
+
+  if(id != null) {
+
+    const stmt = db.prepare("SELECT * FROM Users WHERE ID=?");
+    stmt.all([id], (err, rows) => {
+      if(rows == null) {
+        res.json({err: "No user with that ID"});
+      } else {
+        db.run("DELETE FROM Users WHERE ID=?", [id]);
+        db.run("Delete From Likes WHERE Liker=?", [id]);
+        res.json({err: "Deleted User"});
+      }
+    });
+
+  } else {
+    res.json({err: "Invalid Request"});
+  }
+});
 
 module.exports = router;
