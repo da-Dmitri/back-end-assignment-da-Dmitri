@@ -1,4 +1,6 @@
-const { response } = require("../app");
+const request = require('supertest');
+const express = require('express');
+const app = express();
 
 //Users API
 const weburl = "localhost:3000"
@@ -14,12 +16,20 @@ var body = JSON.stringify({
 
 
 
-test('Create User Jane Doe', () => {
-    return fetch(weburl+"/users/new", {method: "POST", headers: headers, body: body })
-    .then(response => {
-        expect(response.Username).toBe('Jane Doe');
-    })
-});
+describe('POST /users', function() {
+    it('Creates a User', function(done) {
+      request(app)
+        .post('/users')
+        .send({name: 'john'})
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err);
+          return done();
+        });
+    });
+  });
 
 // get the user id by name and delete it
 test('Destroy User Jane Doe', () => {

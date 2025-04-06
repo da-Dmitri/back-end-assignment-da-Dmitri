@@ -31,8 +31,9 @@ router.get('/', function(req, res, next) {
 router.post('/new', function(req, res, next) {
   if(req.body.Username != null) {
 
-    db.prepare("INSERT into Users (Username) VALUES (?)")
-    db.run(req.body.Username)
+    const stmt = db.prepare("INSERT INTO Users (Username) VALUES (?)");
+    stmt.run([req.body.Username]);
+    res.json({err: "Created New User"});
 
   } else {
     res.json({err: "No username specified"});
@@ -41,14 +42,14 @@ router.post('/new', function(req, res, next) {
 
 /* Change a user's name */
 router.put('/edit', function(req, res, next) {
-  if(req.body.Username != null && req.body.id != null) {
+  if(req.body.Username != null && req.query.id != null) {
 
     const stmt = db.prepare("SELECT * FROM Users WHERE ID=?");
-    stmt.all([req.query.id], (err, rows) => {
-      if(rows == null) {
-        res.json({err: "No user with that ID"});
+    stmt.get([req.query.id], (err, row) => {
+      if(row == null) {
+        res.status(404).json({err: "No user with that ID"});
       } else {
-        db.run("UPDATE Users SET Username=? WHERE ID=?", [req.query.id, req.body.Username])
+        db.run("UPDATE Users SET Username=? WHERE ID=?", [req.body.Username, req.query.id])
 
         res.json({err: "Successfully Updated Username"});
       }
@@ -68,13 +69,15 @@ router.delete('/', function(req, res, next) {
   if(id != null) {
 
     const stmt = db.prepare("SELECT * FROM Users WHERE ID=?");
-    stmt.all([id], (err, rows) => {
-      if(rows == null) {
-        res.json({err: "No user with that ID"});
+    stmt.get([id], (err, row) => {
+      if(row == null) {
+        res.status(404).json({err: "No user with that ID"});
       } else {
-        db.run("DELETE FROM Users WHERE ID=?", [id]);
-        db.run("Delete From Likes WHERE Liker=?", [id]);
-        res.json({err: "Deleted User"});
+        db.serialize(() => {
+          db.run("DELETE FROM Users WHERE ID=?", [id]);
+          db.run("Delete From Likes WHERE Liker=?", [id]);
+          res.json({err: "Deleted User"});
+        });
       }
     });
 
