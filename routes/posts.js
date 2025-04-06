@@ -4,19 +4,23 @@ var router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('backendb');
 
-/* GET a user with a specific ID*/
+/* GET a post */
 router.get('/', function(req, res, next) {
 
   if(req.query.id) {
     const stmt = db.prepare("SELECT * FROM Posts WHERE ID=?");
-    stmt.all([req.query.id], (err, rows) => {
-      res.status(200).json(rows);
+    stmt.get([req.query.id], (err, row) => {
+      if(row != null) {
+        res.status(200).json(row);
+      } else {
+        res.status(404).json({err: "No Post with That id"})
+      }
   });
 
   } else {
     const stmt = db.prepare("SELECT * FROM Posts");
     stmt.all((err, rows) => {
-      res.status(200).json({users: rows});
+      res.status(200).json({Posts: rows});
     });
   }
 });
@@ -28,8 +32,8 @@ router.post('/', function(req, res, next) {
 
   if(user != null && content != null) {
 
-    const stmt = db.prepare("INSERT into Posts (Content, Poster) VALUES (? , ?)")
-    stmt.run([content, user])
+    const stmt = db.prepare("INSERT into Posts (Content, Poster, ReplyTo) VALUES (? , ?, ?)")
+    stmt.run([content, user, null])
     res.json({err: "Created New Post"});
 
   } else {
@@ -76,7 +80,7 @@ router.delete('/', function(req, res, next) {
         db.serialize(() => {
           db.run("DELETE FROM Posts WHERE ID=?", [id]);
           db.run("DELETE From Likes WHERE Liked=?", [id]);
-          res.json({err: "Deleted User"});
+          res.json({err: "Deleted Post"});
         });
       }
     });
