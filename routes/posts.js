@@ -41,6 +41,22 @@ router.post('/', function(req, res, next) {
   }
 });
 
+/* Create a reply Post */
+router.post('/reply', function(req, res, next) {
+
+  [user, content, post] = [req.body.as, req.body.content, req.query.id]
+
+  if(user != null && content != null && id != null) {
+
+    const stmt = db.prepare("INSERT into Posts (Content, Poster, ReplyTo) VALUES (? , ?, ?)")
+    stmt.run([content, user, post])
+    res.json({err: "Created New Post"});
+
+  } else {
+    res.json({err: "Invalid Request"});
+  }
+});
+
 /* Edit a Post */
 router.put('/', function(req, res, next) {
 
